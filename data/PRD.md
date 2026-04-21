@@ -1,178 +1,287 @@
-# PRD — ascii-art-stylize
+# PRD — ascii-art-web-export
 
 ## 1. Problem Statement
 
-We already have a working Go web application that renders ASCII art in the browser. This exercise is to stylize that existing website without breaking the core rendering behavior. The product must remain assignment-compliant while becoming more appealing, responsive, consistent, and easier to use.
+We have a working Go web application that renders ASCII art. This exercise adds export functionality so users can download the rendered ASCII art as a text file. The feature must preserve all existing rendering and validation logic, add a new HTTP export endpoint, and ensure the downloaded file matches the browser-rendered output byte-for-byte.
 
 ## 2. Users and Use Case
 
-- Primary user: student or reviewer opening the project in a browser.
-- Primary goal: render text as ASCII art with `standard`, `shadow`, or `thinkertoy` through a polished web UI.
-- Secondary goal: verify that styling improvements do not regress input validation, error handling, readability, or route behavior.
+- Primary user: student or developer using the ASCII art web app.
+- Primary goal: render text as ASCII art and download the result as a `.txt` file.
+- Secondary goal: verify that export functionality does not regress existing rendering, validation, or error handling.
 
 ## 3. Product Contract
 
-The application must preserve these routes:
+### 3.1 Existing Routes (Preserved)
 
 - `GET /`
-  - serves the main page
+  - serves the main page with render form and export control
   - returns `200 OK`
 
 - `POST /ascii-art`
-  - accepts form data
-  - validates `text` and `banner`
-  - renders ASCII art
+  - accepts form data with `text` and `banner`
+  - validates inputs
+  - renders ASCII art on same page
   - returns `200 OK` on success
 
-- `GET /css/*`
-  - serves CSS assets used by the interface
+### 3.2 New Export Route
 
-- `GET /image/*`
-  - serves static decorative assets used by the interface
+- `POST /ascii-art/export`
+  - accepts form data with `text` and `banner`
+  - re-renders from submitted values (matches render flow exactly)
+  - returns ASCII art as downloadable `.txt` file
+  - returns `200 OK` with proper HTTP headers on success
+  - returns `400 Bad Request` for invalid input
 
-Supported banners:
+### 3.3 Supported Banners
 
 - `standard`
 - `shadow`
 - `thinkertoy`
 
-Input rules:
+### 3.4 Input Rules (Inherited from Render)
 
 - submitted text may contain escaped newlines such as `Hello\nWorld`
 - escaped newlines must be converted to actual line breaks before rendering
+- export validation rules match render validation exactly
 
-Presentation rules:
+### 3.5 Export-Specific Rules
 
-- the interface must use CSS
-- the website must remain readable regardless of color choices
-- the layout must be responsive and consistent
-- styling must not alter the generated ASCII output
+- Export endpoint re-renders from `text` + `banner` to ensure consistency
+- Exported content must match browser-rendered result byte-for-byte
+- Exported file receives correct permissions (read/write for user)
+- Downloaded filename is stable and predictable
 
 ## 4. Functional Requirements
 
-### 4.1 Web Interface
+### 4.1 Web Interface (Existing + Export)
 
 - The home page must contain:
   - a text input field or textarea
   - a banner selector
-  - a submit button
-- After a successful submission, the same page should display the rendered result below the form.
-- The rendered result must be displayed in a whitespace-preserving container such as `<pre>`.
-- The interface must provide a clear visual distinction between:
-  - the input section
-  - the action controls
-  - the result section
-  - the error page
-- The layout must remain usable on smaller screens.
+  - a submit button for render
+  - a download button or link for export
+- After render submission, the same page displays the result below the form.
+- The rendered result must be in a whitespace-preserving container such as `<pre>`.
+- Export button/link may:
+  - appear only when a result exists, or
+  - always appear with backend validation handling invalid requests
 
-### 4.2 Request Validation
+### 4.2 Export Endpoint
 
-- `GET /` must reject non-`GET` methods with `400 Bad Request`.
-- `POST /ascii-art` must reject non-`POST` methods with `400 Bad Request`.
-- Any unsupported banner value must return `400 Bad Request`.
-- Unknown routes must return `404 Not Found`.
+- A new `POST /ascii-art/export` endpoint accepts the same form data as `/ascii-art`:
+  - `text` field: the input text
+  - `banner` field: the banner type
+- Export re-renders from submitted `text` + `banner` (same as render flow)
+- Exported content must match rendered output exactly (byte-for-byte)
 
-### 4.3 Banner and Rendering
+### 4.3 HTTP Response Headers for Export
 
-- Banner files are loaded from `assets/<banner>.txt`.
-- Rendering must continue to use reusable internal packages:
+- `Content-Type`: `text/plain` (or `text/plain; charset=utf-8`)
+- `Content-Length`: exact size of the export body
+- `Content-Disposition`: `attachment; filename="ascii-art.txt"` (or similar stable filename)
+- Return `200 OK` on successful export
+
+### 4.4 Input Validation for Export
+
+- Validate `text` field using existing validation rules
+- Validate `banner` field against allowed banners
+- Return `400 Bad Request` if:
+  - required field is missing
+  - banner is invalid or missing
+  - text is empty (follow same rule as `/ascii-art`)
+  - any existing validation rule fails
+- Return `500 Internal Server Error` if render fails or asset is missing
+
+### 4.5 Banner and Rendering (Existing + Shared)
+
+- Banner files are loaded from `assets/<banner>.txt`
+- Rendering reuses internal packages:
   - `internal/font`
   - `internal/render`
-- Rendering behavior must preserve:
+- Behavior preserved:
   - exact spacing
   - exact line breaks
   - multi-line input behavior
   - printable ASCII glyph handling
+- Export and render flows must produce identical output
 
-### 4.4 Styling and UX
-
-- CSS must be linked from the HTML templates.
-- The interface should feel intentionally styled rather than default browser output.
-- Form controls should communicate focus and interaction clearly.
-- The result block should be easy to distinguish and easy to read.
-- Error pages should provide immediate feedback and a clear path back to the form.
-
-### 4.5 Error Handling
+### 4.6 Error Handling (Existing + Export)
 
 - `200 OK`
   - valid home page request
   - valid render request
+  - valid export request with correct headers
 - `400 Bad Request`
-  - wrong method
+  - wrong HTTP method
   - invalid banner
-  - malformed or invalid client input
+  - missing or invalid input
 - `404 Not Found`
   - unknown route
-  - missing template or banner file when mapped as not found
+  - missing template or asset file
 - `500 Internal Server Error`
   - unexpected server-side failure
-  - template execution/parsing failure not caused by the client
+  - render failure for export request
 
 ## 5. Non-Goals
 
-- No external packages.
-- No rebuild of the server-side rendering pipeline.
-- No REST API beyond the required HTML form flow.
-- No additional banner types.
-- No client-side rendering framework.
-- No changes that sacrifice readability for visual effects.
+- No external packages (standard library only).
+- No changes to existing rendering pipeline or font logic.
+- No new asset types or banner formats.
+- No REST API beyond required form submission flow.
+- No client-side rendering or JavaScript logic for export.
+- No compression or encoding of export content.
+- No breaking changes to existing routes or behavior.
 
 ## 6. Acceptance Criteria
 
-- The app starts as a Go HTTP server.
-- Visiting `/` shows the form in a styled interface.
-- Submitting valid text and a valid banner renders ASCII art successfully.
-- All three banners work.
-- Escaped newline input works correctly.
-- Output spacing is preserved in the browser.
-- CSS is applied successfully through the static route.
-- The interface is visually improved and remains readable.
-- The layout adapts cleanly on desktop and mobile widths.
-- Invalid methods return `400`.
-- Invalid banner values return `400`.
-- Unknown routes return `404`.
-- Internal failures are handled with `500`.
-- Templates are stored in the root `templates/` directory.
-- The project uses only Go standard library packages.
+### 6.1 Core Export Behavior
+
+- Export endpoint exists at `POST /ascii-art/export`
+- Export accepts `text` and `banner` fields
+- Export re-renders from submitted `text` + `banner`
+- Exported content matches rendered output byte-for-byte
+- Downloaded file is a plain text file (`.txt`)
+- Exported file has correct permissions (read/write for user)
+
+### 6.2 HTTP Response
+
+- Successful export returns `200 OK`
+- Response includes `Content-Type: text/plain`
+- Response includes `Content-Length` with correct size
+- Response includes `Content-Disposition: attachment; filename="ascii-art.txt"`
+- Browser downloads file with correct name and extension
+
+### 6.3 Input Validation
+
+- Invalid banner returns `400 Bad Request`
+- Missing text returns `400 Bad Request`
+- Empty text follows same rule as `/ascii-art`
+- Missing asset file returns `500 Internal Server Error`
+
+### 6.4 Regression and Integration
+
+- `GET /` still works and includes export control
+- `POST /ascii-art` still works without changes
+- All existing validation rules still apply
+- Invalid method to export endpoint returns `400`
+- Unknown routes still return `404`
+- Export does not break existing error handling
+- All three banners work for export
+
+### 6.5 Code Quality
+
+- Export logic tested (unit + integration tests)
+- Export reuses existing validation and render logic (DRY)
+- HTTP headers set correctly in all cases
+- Code follows existing handler patterns
+- Only Go standard library packages used
 
 ## 7. Implementation Approach
 
+### 7.1 TDD Strategy
+
+- Start with export contract and HTTP specification (tasks 1-2)
+- Write failing tests before implementation (tasks 3-5)
+- Implement smallest working slice (tasks 6-9)
+- Add regression tests (task 13)
+- Refactor after all tests pass (task 14)
+
+### 7.2 Existing Structure (Preserved)
+
 - `main.go`
-  - create the HTTP mux
-  - register routes through `internal/handlers`
-  - expose static file handlers for CSS and images
-  - start `http.ListenAndServe`
-- `internal/handlers`
-  - own the `GET /` and `POST /ascii-art` handlers
-  - keep HTTP validation, template rendering, and error rendering out of `main.go`
+  - creates HTTP mux
+  - registers routes through `internal/handlers`
+  - exposes static file handlers
+  - starts `http.ListenAndServe`
+- `internal/handlers` (extended with export)
+  - owns `GET /`, `POST /ascii-art`, and new `POST /ascii-art/export`
+  - validates methods, fields, and banners
 - `templates/`
-  - `index.html` for the styled form and in-page result display
-  - `error.html` for styled error responses
-- `css/`
-  - `style.css` for responsive layout, typography, colors, and interaction states
+  - `index.html` updated with export button/link
+  - `error.html` for error responses
 - `internal/font`
   - load and parse banner files
 - `internal/render`
   - render normalized input into ASCII art
 
-Rationale:
+### 7.3 New Export Layer
 
-- keep `main.go` focused on application startup
-- keep HTTP concerns grouped in one package
-- preserve reusable rendering logic
-- keep template and route responsibilities separate
-- confine presentation work to templates, CSS, and static assets when possible
+- `internal/export/export.go` (new)
+  - Export content generation function
+  - Accepts final ASCII text
+  - Returns unchanged as export body
+  - Minimal and deterministic
+- `internal/export/export_test.go` (new)
+  - Tests for export content generation
+  - Tests for newline preservation
+  - Tests for byte-for-byte identity
+
+### 7.4 Test Coverage (new)
+
+- `internal/handlers/export_test.go`
+  - Handler tests for export endpoint
+  - Tests for HTTP headers
+  - Tests for error cases
+- `testdata/export/`
+  - Export fixture data and expected outputs
+
+### 7.5 Rationale
+
+- Keep export content logic separate (`internal/export/`)
+- Extend handlers for HTTP behavior (reuse existing package)
+- Reuse existing render, font, and validation logic
+- Add export fixture data under testdata/export/
+- Preserve all existing file organization
+- No breaking changes to existing code
 
 ## 8. Verification Checklist
 
-- `GET /` returns `200`.
-- `POST /ascii-art` with valid form data returns `200`.
-- CSS loads from the static route.
-- Invalid methods return `400`.
-- Invalid banners return `400`.
-- Unknown routes return `404`.
-- Missing template or internal failure path returns `404` or `500` as designed.
-- Response body contains rendered ASCII art.
-- The result remains readable after styling changes.
-- The page remains usable at mobile widths.
-- Manual audit cases from the exercise render correctly.
+### 8.1 Automated Tests (Required)
+
+- ✓ Export handler accepts POST with valid text and banner
+- ✓ Export handler returns `200 OK` on success
+- ✓ Export response includes correct `Content-Type`
+- ✓ Export response includes correct `Content-Length`
+- ✓ Export response includes correct `Content-Disposition`
+- ✓ Export rejects invalid banner with `400`
+- ✓ Export rejects missing text with `400`
+- ✓ Export rejects wrong HTTP method with `400`
+- ✓ Export content matches rendered output exactly
+- ✓ Escaped newlines in export match render flow
+- ✓ All existing `/ascii-art` tests still pass
+- ✓ All existing `GET /` tests still pass
+
+### 8.2 Regression Tests
+
+- ✓ `GET /` returns `200`
+- ✓ `POST /ascii-art` with valid data returns `200`
+- ✓ Invalid methods return `400`
+- ✓ Invalid banners return `400`
+- ✓ Unknown routes return `404`
+- ✓ Missing asset returns `500`
+- ✓ Error page rendering works
+- ✓ Response body contains rendered ASCII art
+
+### 8.3 Manual Verification
+
+- ✓ Open `/` in browser
+- ✓ See render form and export button/link
+- ✓ Submit valid text and banner
+- ✓ See result rendered on page
+- ✓ Click export/download
+- ✓ Verify file downloads with `.txt` extension
+- ✓ Verify downloaded content matches rendered output
+- ✓ Test invalid banner to export returns error
+- ✓ Test missing text to export returns error
+- ✓ Verify all three banners work for export
+
+### 8.4 Exercise Requirements
+
+- ✓ Export functionality works
+- ✓ At least one export format (text/plain)
+- ✓ Proper HTTP headers (Content-Type, Content-Length, Content-Disposition)
+- ✓ Website includes download button/link
+- ✓ Errors handled correctly
+- ✓ Code respects good practices (TDD, DRY, separation of concerns)
+- ✓ Only standard Go packages used

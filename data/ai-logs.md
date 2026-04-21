@@ -42,3 +42,49 @@ Added 2026-04-21 entry to start tracking the ascii-art-web-export project.
 Structure Snapshot
 Project is ready for development with existing Go structure in place.
 
+
+**Session Update:**
+
+Prompts / Requests (continued)
+- User reviewed tasks.md decomposition from ChatGPT, validated it covers complete program
+- Refined Task 1: locked decision to "Export will re-render from submitted text + banner" (matches render flow exactly)
+- Added file permissions requirement (read/write for user) to Task 1
+- Added edge cases to Task 1 (empty text, very long text, special characters)
+- Added Content-Length header to Task 8
+- User requested PRD adjustment to align with tasks and exercise requirements
+
+File Changes Recorded (continued)
+data/tasks.md
+- Task 1: Added DECISION statement and file permissions requirement
+- Task 1: Added edge case handling section
+- Task 8: Added Content-Length header requirement
+data/PRD.md
+- Complete rewrite to align with ascii-art-web-export project scope
+- Section 1-2: Problem statement and use case (already export-focused)
+- Section 3: Product contract now includes new POST /ascii-art/export route with detailed spec
+- Section 4: Functional requirements expanded for export endpoint, HTTP headers, validation, integration
+- Section 5: Non-goals clarified for export context
+- Section 6: Acceptance criteria split into 5 subsections covering export behavior, HTTP response, validation, regression, code quality
+- Section 7: Implementation approach includes TDD strategy, new export layer structure, test coverage plan
+- Section 8: Verification checklist expanded with automated tests, regression tests, manual verification, exercise requirements
+
+Decisions (continued)
+- Export endpoint re-renders from text + banner (not from pre-rendered output)
+- Export handler reuses existing validation and render logic (DRY principle)
+- New internal/export/ package for content generation layer (separate from HTTP handler)
+- Tests will cover handler behavior, content generation, HTTP headers, and error cases
+- No breaking changes to existing routes or behavior
+
+Current Implementation Status
+- Documentation is now complete and aligned (exercise.md, tasks.md, PRD.md)
+- TDD-first approach fully documented with 15-task checklist
+- Ready to begin implementation starting with Task 3 (failing export handler tests)
+- Next: Review existing codebase structure, then start writing tests for export endpoint
+
+Notes
+- Tasks 1-2 define the contract and HTTP specification
+- Tasks 3-5 are write-failing-tests phase
+- Tasks 6-9 are minimal implementation phase
+- Task 13 adds regression tests
+- Task 14 refactors after tests pass
+- Full suite verification in Task 15
