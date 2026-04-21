@@ -28,6 +28,7 @@ type errorPageData struct {
 func Register(mux *http.ServeMux) {
 	mux.HandleFunc("/", home)
 	mux.HandleFunc("/ascii-art", asciiArt)
+	mux.HandleFunc("/export", exportHandler)
 }
 
 // renderErrorPage centralizes HTML error responses and falls back to
@@ -147,4 +148,8 @@ func asciiArt(w http.ResponseWriter, r *http.Request) {
 	if err := renderTemplate(w, "templates/index.html", data); err != nil {
 		renderErrorPage(w, http.StatusInternalServerError, "Internal Server Error")
 	}
+}
+
+func exportHandler(w http.ResponseWriter, r *http.Request) {
+	http.Error(w, "not implemented", http.StatusInternalServerError)
 }
