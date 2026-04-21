@@ -77,33 +77,63 @@ Follow these tasks in order. Do not skip ahead before the current layer is green
 
 ### 1. Define the exact export contract in the spec.
 
-- Decide which route handles export.
-- Decide which method is allowed for export.
-- Decide what input the export endpoint receives.
-- **DECISION: Export will re-render from submitted `text` + `banner`** (cleaner, matches render flow exactly, ensures consistency).
-- Decide the exact filename policy for the downloaded file.
-- Ensure file has correct permissions (read/write for user as per exercise requirement).
-- Decide the error behavior for:
-  - wrong method
-  - invalid banner
-  - missing text
-  - render failure
-  - missing asset file
-- Consider edge cases:
-  - empty text input handling (should follow same rules as `/ascii-art`)
-  - very long text handling
-  - special characters in banner names
+### 1. Define the exact export contract in the spec.
+
+- Export route: `POST /export`
+- Export accepts the same core inputs as the render flow:
+  - `text`
+  - `banner`
+- Export does **not** trust a pre-rendered ASCII result from the client.
+- **Decision:** export re-renders on the server from submitted `text` + `banner`.
+- The exported file body must be exactly the ASCII-art result produced by the backend render rules.
+- Export response body must be plain text only.
+- Export must trigger file download with a `.txt` filename.
+- Export must reuse the same validation boundaries as the render flow.
+
+- Error behavior:
+  - wrong HTTP method -> reject request
+  - missing `text` or invalid `text` -> reject request according to render rules
+  - missing `banner` or invalid `banner` -> reject request
+  - missing banner asset file -> reject request
+  - render failure -> reject request
+
+- Consistency rules:
+  - newline handling must match the existing render behavior exactly
+  - no extra spaces may be added
+  - no lines may be removed unless the shared render rules already do that
+  - exported output must match render output byte-for-byte
+
+- File policy:
+  - download filename should be stable and predictable
+  - content type must represent plain text
+  - response should only be successful when export content is generated correctly
+  - Empty `text` handling must follow the exact same behavior as `POST /ascii-art`.
+- If `POST /ascii-art` returns an empty rendered result for empty input, `POST /export` must return that same empty result as a downloadable plain text response.
 
 ### 2. Freeze the expected HTTP behavior before implementation.
 
-- Define the export route path.
-- Define the allowed method.
-- Define the success status code.
-- Define the invalid-request status code.
-- Define the `Content-Type`.
-- Define the `Content-Disposition`.
-- Decide whether empty input is allowed or rejected.
-- Decide whether newline handling must match `/ascii-art` exactly.
+- Define the export route path as `POST /export`.
+- Reject any method other than `POST`.
+- Return `200 OK` on successful export.
+- Return a client error status for invalid requests.
+- Return a server error status for internal export/render failures.
+- Set `Content-Type` to plain text for the downloadable response.
+- Set `Content-Disposition` so the browser downloads a `.txt` file.
+- Decide and keep one stable filename policy for the exported file.
+- Keep empty `text` behavior exactly aligned with `POST /ascii-art`.
+- Keep newline behavior exactly aligned with the existing render flow.
+- Ensure the response body is the exact ASCII output, not HTML.
+
+### Error behavior for export
+
+- Reuse the same HTTP error boundaries already used by `/ascii-art`.
+- Return `400 Bad Request` for:
+  - wrong method
+  - invalid banner
+  - invalid render input
+- Return `404 Not Found` when the required banner asset file is missing.
+- Return `500 Internal Server Error` only for unexpected internal failures.
+- Reuse the existing error page rendering flow for export failures.
 
 ### 3. Add failing export handler tests.
 
