@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Error</title>
+  <link rel="stylesheet" href="/css/style.css">
+  
+</head>
+<body>
+  <body class="error-page">
+  <div class="container">
+    <h1>{{.Title}}</h1>
+
+    <div class="error-box">
+      {{.Code}} {{.Message}}
+    </div>
+
+    <p class="error-note">{{.Explanation}}</p>
+    <p class="error-help">{{.Action}}</p>
+
+    <a class="back-link" href="/">Go back</a>
+  </div>
+</body>
+</html>

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ASCII Art Generator</title>
+  <link rel="stylesheet" href="/css/style.css">
+  
+</head>
+<body>
+  <body class="home-page">
+  <div class="container">
+    <h1>ASCII Art Generator</h1>
+    <p class="subtitle">Turn plain text into stylish ASCII art with your favorite banner.</p>
+
+    <form action="/ascii-art" method="POST">
+      <label for="text">Enter text</label>
+      <textarea id="text" name="text" rows="8" cols="50" placeholder="Type something here...">{{.Text}}</textarea>
+
+      <div class="banner-group">
+        <p>Select banner</p>
+
+        <div class="banner-options">
+          <label for="standard">
+            <input type="radio" id="standard" name="banner" value="standard" {{if eq .Banner "standard"}}checked{{end}}>
+            Standard
+          </label>
+
+          <label for="shadow">
+            <input type="radio" id="shadow" name="banner" value="shadow" {{if eq .Banner "shadow"}}checked{{end}}>
+            Shadow
+          </label>
+
+          <label for="thinkertoy">
+            <input type="radio" id="thinkertoy" name="banner" value="thinkertoy" {{if eq .Banner "thinkertoy"}}checked{{end}}>
+            Thinkertoy
+          </label>
+        </div>
+      </div>
+
+      <button type="submit">Generate ASCII Art</button>
+    </form>
+    {{if .HasResult}}
+  <div class="result-section">
+    <h2>ASCII Art Result</h2>
+    <div class="result-box">
+      <pre>{{.Result}}</pre>
+    </div>
+  </div>
+{{end}}
+  </div>
+</body>
+</html>
