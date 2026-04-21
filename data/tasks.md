@@ -150,7 +150,7 @@ Follow these tasks in order. Do not skip ahead before the current layer is green
 ### 4. Decide the source of truth for export output.
 
 - Choose whether export will:
-  - re-render from `text` + `banner`, or
+  - re-render from `text` + `banner`, or (this)
   - receive the final ASCII result directly.
 - Document the choice briefly in the repo.
 - Keep the chosen model consistent across handler, tests, and template flow.
