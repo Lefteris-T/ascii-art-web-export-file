@@ -38,7 +38,7 @@ func Register(mux *http.ServeMux) {
 // renderErrorPage centralizes HTML error responses and falls back to
 // http.Error if the shared error template cannot be loaded.
 func renderErrorPage(w http.ResponseWriter, code int, message string) {
-	tmpl, err := template.ParseFiles("../../templates/error.html")
+	tmpl, err := template.ParseFiles("templates/error.html")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -106,7 +106,7 @@ func home(w http.ResponseWriter, r *http.Request) {
 		Result:    "",
 		HasResult: false,
 	}
-	if err := renderTemplate(w, "../../templates/index.html", data); err != nil {
+	if err := renderTemplate(w, "templates/index.html", data); err != nil {
 		renderErrorPage(w, http.StatusInternalServerError, "Internal Server Error")
 	}
 }
@@ -135,7 +135,7 @@ func asciiArt(w http.ResponseWriter, r *http.Request) {
 		HasResult: true,
 	}
 
-	if err := renderTemplate(w, "../../templates/index.html", data); err != nil {
+	if err := renderTemplate(w, "templates/index.html", data); err != nil {
 		renderErrorPage(w, http.StatusInternalServerError, "Internal Server Error")
 	}
 }
@@ -170,7 +170,7 @@ func buildASCII(text, banner string) (string, int, string) {
 		return "", http.StatusBadRequest, "Bad Request"
 	}
 
-	bannerPath := filepath.Join("../../assets", banner+".txt")
+	bannerPath := filepath.Join("assets", banner+".txt")
 
 	f, err := loadBanner(bannerPath)
 	if err != nil {
