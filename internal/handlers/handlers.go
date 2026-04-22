@@ -10,6 +10,9 @@ import (
 	"strings"
 )
 
+var loadBanner = font.LoadBanner
+var renderASCII = render.Render
+
 type indexPageData struct {
 	Text      string
 	Banner    string
@@ -169,12 +172,12 @@ func buildASCII(text, banner string) (string, int, string) {
 
 	bannerPath := filepath.Join("../../assets", banner+".txt")
 
-	f, err := font.LoadBanner(bannerPath)
+	f, err := loadBanner(bannerPath)
 	if err != nil {
 		return "", http.StatusNotFound, "Not Found"
 	}
 
-	result, err := render.Render(text, f)
+	result, err := renderASCII(text, f)
 	if err != nil {
 		return "", http.StatusBadRequest, "Bad Request"
 	}
