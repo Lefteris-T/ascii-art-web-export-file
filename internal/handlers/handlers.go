@@ -36,11 +36,27 @@ type errorPageData struct {
 	Action      string
 }
 
+// WithSecurityHeaders wraps a handler with baseline browser security headers.
+// It is used for both app routes and static file routes so responses get the
+// same protection against MIME sniffing, clickjacking, and referrer leakage.
+func WithSecurityHeaders(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Set headers before the wrapped handler writes the response.
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		w.Header().Set("X-Frame-Options", "DENY")
+		w.Header().Set("Content-Security-Policy", "default-src 'self'; style-src 'self'; img-src 'self'")
+		w.Header().Set("Referrer-Policy", "no-referrer")
+
+		next.ServeHTTP(w, r)
+	})
+}
+
 // Register wires the HTTP routes used by the app into the provided mux.
+// Routes are wrapped with security headers before being registered.
 func Register(mux *http.ServeMux) {
-	mux.HandleFunc("/", home)
-	mux.HandleFunc("/ascii-art", asciiArt)
-	mux.HandleFunc("/export", exportHandler)
+	mux.Handle("/", WithSecurityHeaders(http.HandlerFunc(home)))
+	mux.Handle("/ascii-art", WithSecurityHeaders(http.HandlerFunc(asciiArt)))
+	mux.Handle("/export", WithSecurityHeaders(http.HandlerFunc(exportHandler)))
 }
 
 // renderErrorPage centralizes HTML error responses and falls back to
