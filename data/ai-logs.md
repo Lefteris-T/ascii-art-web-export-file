@@ -135,3 +135,95 @@ Current Implementation Status
 
 Next Steps
 - Continue from the current task plan without deleting previous logs.
+
+**Session Update (2026-04-22):**
+
+Prompts / Requests (continued)
+- User asked what "IDE" means.
+- User asked to make all tests pass without changing application behavior.
+- User asked to update the README for the current exercise.
+- User asked to add comments to main program functions and tests.
+- User asked whether the project passes the audit checklist.
+- User asked about exported file permissions.
+- User added more downloadable export formats.
+- User asked to fix tests after the new export format API.
+- User asked to update PRD and README for the new multi-format export behavior.
+- User asked to complete today's AI log.
+
+File Changes Recorded Today
+README.md
+- Rewritten from old ascii-art-stylize wording to ascii-art-web-export-file.
+- Updated routes to include `POST /export`.
+- Documented export formats: TXT, HTML, JSON.
+- Documented export form field `format`.
+- Documented content types, filenames, download headers, and browser-managed file permissions.
+- Updated usage steps, project structure, and render/export flow.
+
+data/PRD.md
+- Updated product contract from TXT-only export to multi-format export.
+- Corrected export route to `POST /export`.
+- Added `format` field with supported values `txt`, `html`, and `json`.
+- Updated response header requirements per selected format.
+- Updated acceptance criteria, validation rules, implementation approach, test coverage, and verification checklist.
+
+data/tasks.md
+- Marked Task 5 as complete for now.
+
+internal/export/export.go
+- User expanded export content generation to support TXT, HTML, and JSON formats.
+- Export API now returns content, content type, filename, and error.
+
+internal/export/export_test.go
+- Updated tests to match new `Build(format, text, banner, result)` API.
+- Added TXT byte-for-byte identity coverage.
+- Added HTML escaping/wrapping coverage.
+- Added JSON payload coverage.
+- Added unsupported format coverage.
+
+internal/handlers/handlers.go
+- Comments added to core helper types and functions.
+- User added multi-format export handling in `/export` for TXT, HTML, and JSON.
+
+templates/index.html
+- User added export format radio buttons for TXT, HTML, and JSON.
+- Nested `<body>` issue was fixed.
+
+main.go
+- Added clearer comments for server bootstrap and static file serving.
+
+Test files
+- Added comprehensive comments to handler, export, render, font, and main tests.
+- Added/kept handler package test setup so tests can resolve repo-relative templates and assets.
+- Render tests no longer depend on missing fixture files.
+
+Decisions / Clarifications
+- Web export file permissions are browser/OS-managed because the server sends a downloadable HTTP response instead of writing a local file directly.
+- TXT export is the byte-for-byte parity format with the rendered ASCII result.
+- HTML export intentionally wraps escaped output in a document with a `<pre>` block.
+- JSON export includes metadata plus rendered result.
+- Missing export format defaults to TXT.
+- Unsupported export format should return `400 Bad Request`.
+
+Verification
+- Full Go test suite passes with writable build cache:
+  `GOCACHE=/tmp/go-build go test ./...`
+- Passing packages:
+  - `ascii-art-web-export-file`
+  - `ascii-art-web-export-file/internal/export`
+  - `ascii-art-web-export-file/internal/font`
+  - `ascii-art-web-export-file/internal/handlers`
+  - `ascii-art-web-export-file/internal/render`
+
+Audit Notes
+- Core audit items are covered: standard packages only, export route, downloadable file headers, clear export UI, error handling, and tests.
+- Project now supports multiple formats: TXT, HTML, JSON.
+- Manual browser download verification is still recommended before final submission.
+
+Current Implementation Status
+- Export implementation supports TXT, HTML, and JSON.
+- Documentation is aligned with current implementation.
+- Automated tests are green.
+
+Next Steps
+- Optional: manually run the server, generate ASCII art, and download each format from the browser.
+- Optional: add handler tests for HTML/JSON response headers if stronger audit evidence is wanted.
