@@ -23,6 +23,8 @@ func repoRoot(t *testing.T) string {
 	return filepath.Dir(filepath.Dir(filepath.Dir(thisFile)))
 }
 
+// loadStandardFont loads the real standard banner so render tests exercise the
+// same glyph data used by the web app.
 func loadStandardFont(t *testing.T) font.Font {
 	t.Helper()
 
@@ -34,6 +36,8 @@ func loadStandardFont(t *testing.T) font.Font {
 	return f
 }
 
+// expectedRenderedLine builds the expected 8-row ASCII block for one input line
+// directly from the loaded font data.
 func expectedRenderedLine(t *testing.T, line string, f font.Font) string {
 	t.Helper()
 
@@ -55,6 +59,8 @@ func expectedRenderedLine(t *testing.T, line string, f font.Font) string {
 	return b.String()
 }
 
+// expectedRenderedText mirrors the documented render rules for test
+// expectations without relying on external fixture files.
 func expectedRenderedText(t *testing.T, text string, f font.Font) string {
 	t.Helper()
 

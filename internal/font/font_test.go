@@ -44,7 +44,8 @@ func TestLoadStandard_SpaceIs8EmptyLines(t *testing.T) {
 		t.Fatalf("space glyph: expected 8 lines, got %d", len(glyph))
 	}
 
-	// In the Zone01 standard font, the space glyph is 8 empty lines.
+	// The space glyph should preserve blank rows because render output depends
+	// on those rows for horizontal spacing between words.
 	for i, line := range glyph {
 		// TrimRight is assertion-only here; loader behavior preserves spaces.
 		if strings.TrimRight(line, " ") != "" {
@@ -73,7 +74,7 @@ func TestLoadStandard_ExclamationExistsAndNotAllEmpty(t *testing.T) {
 		t.Fatalf("'!' glyph: expected 8 lines, got %d", len(glyph))
 	}
 
-	// Ensure the glyph is not entirely empty.
+	// Ensure the glyph is not entirely empty, which catches bad parser offsets.
 	// NOTE: This trimming is ONLY for the assertion here, not for the loader.
 	allEmpty := true
 	for _, line := range glyph {
