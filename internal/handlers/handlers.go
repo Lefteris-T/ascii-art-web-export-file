@@ -116,28 +116,12 @@ func asciiArt(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// The exercise allows users to type literal \n in the form input.
 	text := strings.ReplaceAll(r.FormValue("text"), "\\n", "\n")
 	banner := r.FormValue("banner")
 
-	if banner != "standard" && banner != "shadow" && banner != "thinkertoy" {
-		renderErrorPage(w, http.StatusBadRequest, "Bad Request")
-		return
-	}
-
-	bannerPath := filepath.Join("../../assets", banner+".txt")
-
-	// Keep banner parsing and text rendering in the dedicated internal packages
-	// so the HTTP layer stays focused on request/response handling.
-	f, err := font.LoadBanner(bannerPath)
-	if err != nil {
-		renderErrorPage(w, http.StatusNotFound, "Not Found")
-		return
-	}
-
-	result, err := render.Render(text, f)
-	if err != nil {
-		renderErrorPage(w, http.StatusBadRequest, "Bad Request")
+	result, status, message := buildASCII(text, banner)
+	if status != http.StatusOK {
+		renderErrorPage(w, status, message)
 		return
 	}
 
@@ -147,11 +131,11 @@ func asciiArt(w http.ResponseWriter, r *http.Request) {
 		Result:    result,
 		HasResult: true,
 	}
-	if err := renderTemplate(w, "../../templates/index.html", data); err != nil {
+
+	if err := renderTemplate(w, "templates/index.html", data); err != nil {
 		renderErrorPage(w, http.StatusInternalServerError, "Internal Server Error")
 	}
 }
-
 func exportHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		renderErrorPage(w, http.StatusBadRequest, "Bad Request")
@@ -161,34 +145,39 @@ func exportHandler(w http.ResponseWriter, r *http.Request) {
 	text := strings.ReplaceAll(r.FormValue("text"), "\\n", "\n")
 	banner := r.FormValue("banner")
 
-	if banner != "standard" && banner != "shadow" && banner != "thinkertoy" {
-		renderErrorPage(w, http.StatusBadRequest, "Bad Request")
+	exported, status, message := buildASCII(text, banner)
+	if status != http.StatusOK {
+		renderErrorPage(w, status, message)
 		return
 	}
-
-	bannerPath := filepath.Join("../../assets", banner+".txt")
-
-	f, err := font.LoadBanner(bannerPath)
-	if err != nil {
-		renderErrorPage(w, http.StatusNotFound, "Not Found")
-		return
-	}
-
-	result, err := render.Render(text, f)
-	if err != nil {
-		renderErrorPage(w, http.StatusBadRequest, "Bad Request")
-		return
-	}
-
-	exported := result
 
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.Header().Set("Content-Disposition", `attachment; filename="ascii-art.txt"`)
 	w.Header().Set("Content-Length", strconv.Itoa(len([]byte(exported))))
 	w.WriteHeader(http.StatusOK)
 
-	_, err = w.Write([]byte(exported))
+	_, err := w.Write([]byte(exported))
 	if err != nil {
 		return
 	}
+}
+
+func buildASCII(text, banner string) (string, int, string) {
+	if banner != "standard" && banner != "shadow" && banner != "thinkertoy" {
+		return "", http.StatusBadRequest, "Bad Request"
+	}
+
+	bannerPath := filepath.Join("../../assets", banner+".txt")
+
+	f, err := font.LoadBanner(bannerPath)
+	if err != nil {
+		return "", http.StatusNotFound, "Not Found"
+	}
+
+	result, err := render.Render(text, f)
+	if err != nil {
+		return "", http.StatusBadRequest, "Bad Request"
+	}
+
+	return result, http.StatusOK, ""
 }
