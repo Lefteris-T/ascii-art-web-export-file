@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"net/http"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -34,9 +35,9 @@ func Register(mux *http.ServeMux) {
 // renderErrorPage centralizes HTML error responses and falls back to
 // http.Error if the shared error template cannot be loaded.
 func renderErrorPage(w http.ResponseWriter, code int, message string) {
-	tmpl, err := template.ParseFiles("templates/error.html")
+	tmpl, err := template.ParseFiles("../../templates/error.html")
 	if err != nil {
-		http.Error(w, "500 Internal Server Error", http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -54,6 +55,7 @@ func renderErrorPage(w http.ResponseWriter, code int, message string) {
 	if err := tmpl.Execute(w, data); err != nil {
 		http.Error(w, "500 Internal Server Error", http.StatusInternalServerError)
 	}
+
 }
 
 func errorDetails(code int, message string) (string, string, string) {
@@ -101,7 +103,7 @@ func home(w http.ResponseWriter, r *http.Request) {
 		Result:    "",
 		HasResult: false,
 	}
-	if err := renderTemplate(w, "templates/index.html", data); err != nil {
+	if err := renderTemplate(w, "../../templates/index.html", data); err != nil {
 		renderErrorPage(w, http.StatusInternalServerError, "Internal Server Error")
 	}
 }
@@ -123,7 +125,7 @@ func asciiArt(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	bannerPath := filepath.Join("assets", banner+".txt")
+	bannerPath := filepath.Join("../../assets", banner+".txt")
 
 	// Keep banner parsing and text rendering in the dedicated internal packages
 	// so the HTTP layer stays focused on request/response handling.
@@ -145,11 +147,48 @@ func asciiArt(w http.ResponseWriter, r *http.Request) {
 		Result:    result,
 		HasResult: true,
 	}
-	if err := renderTemplate(w, "templates/index.html", data); err != nil {
+	if err := renderTemplate(w, "../../templates/index.html", data); err != nil {
 		renderErrorPage(w, http.StatusInternalServerError, "Internal Server Error")
 	}
 }
 
 func exportHandler(w http.ResponseWriter, r *http.Request) {
-	http.Error(w, "not implemented", http.StatusInternalServerError)
+	if r.Method != http.MethodPost {
+		renderErrorPage(w, http.StatusBadRequest, "Bad Request")
+		return
+	}
+
+	text := strings.ReplaceAll(r.FormValue("text"), "\\n", "\n")
+	banner := r.FormValue("banner")
+
+	if banner != "standard" && banner != "shadow" && banner != "thinkertoy" {
+		renderErrorPage(w, http.StatusBadRequest, "Bad Request")
+		return
+	}
+
+	bannerPath := filepath.Join("../../assets", banner+".txt")
+
+	f, err := font.LoadBanner(bannerPath)
+	if err != nil {
+		renderErrorPage(w, http.StatusNotFound, "Not Found")
+		return
+	}
+
+	result, err := render.Render(text, f)
+	if err != nil {
+		renderErrorPage(w, http.StatusBadRequest, "Bad Request")
+		return
+	}
+
+	exported := result
+
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.Header().Set("Content-Disposition", `attachment; filename="ascii-art.txt"`)
+	w.Header().Set("Content-Length", strconv.Itoa(len([]byte(exported))))
+	w.WriteHeader(http.StatusOK)
+
+	_, err = w.Write([]byte(exported))
+	if err != nil {
+		return
+	}
 }

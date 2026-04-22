@@ -157,6 +157,8 @@ Follow these tasks in order. Do not skip ahead before the current layer is green
 
 ### 5. Add failing tests for export content generation.
 
+Status: Complete for now (2026-04-22).
+
 - Cover exact pass-through of ASCII content.
 - Cover newline preservation.
 - Cover empty content behavior.
