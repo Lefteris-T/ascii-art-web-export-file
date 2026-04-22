@@ -13,12 +13,16 @@ import (
 	"testing"
 )
 
+// testMux builds the same application routes used by main without starting a
+// real HTTP server.
 func testMux() *http.ServeMux {
 	mux := http.NewServeMux()
 	handlers.Register(mux)
 	return mux
 }
 
+// postForm submits URL-encoded form data through the test mux and returns the
+// recorded response for assertions.
 func postForm(t *testing.T, target string, values url.Values) *httptest.ResponseRecorder {
 	t.Helper()
 
@@ -30,6 +34,7 @@ func postForm(t *testing.T, target string, values url.Values) *httptest.Response
 	return rec
 }
 
+// TestHomeHandler_OK verifies that the root route serves the generator page.
 func TestHomeHandler_OK(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	rec := httptest.NewRecorder()
@@ -46,6 +51,8 @@ func TestHomeHandler_OK(t *testing.T) {
 	}
 }
 
+// TestHomeHandler_MethodNotAllowedAsBadRequest preserves the project contract
+// that unsupported methods return 400 instead of the default 405.
 func TestHomeHandler_MethodNotAllowedAsBadRequest(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/", nil)
 	rec := httptest.NewRecorder()
@@ -57,6 +64,8 @@ func TestHomeHandler_MethodNotAllowedAsBadRequest(t *testing.T) {
 	}
 }
 
+// TestHomeHandler_UnknownRoute checks that the root handler rejects paths that
+// do not belong to the application.
 func TestHomeHandler_UnknownRoute(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/missing", nil)
 	rec := httptest.NewRecorder()
@@ -68,6 +77,8 @@ func TestHomeHandler_UnknownRoute(t *testing.T) {
 	}
 }
 
+// TestASCIIArtHandler_OK compares the rendered page against output generated
+// directly by the font and render packages.
 func TestASCIIArtHandler_OK(t *testing.T) {
 	values := url.Values{
 		"text":   {"Hello"},
@@ -99,6 +110,8 @@ func TestASCIIArtHandler_OK(t *testing.T) {
 	}
 }
 
+// TestASCIIArtHandler_InvalidMethod verifies that the render endpoint only
+// accepts POST form submissions.
 func TestASCIIArtHandler_InvalidMethod(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/ascii-art", nil)
 	rec := httptest.NewRecorder()
@@ -110,6 +123,8 @@ func TestASCIIArtHandler_InvalidMethod(t *testing.T) {
 	}
 }
 
+// TestASCIIArtHandler_InvalidBanner verifies that unsupported banner names are
+// rejected before any render output is produced.
 func TestASCIIArtHandler_InvalidBanner(t *testing.T) {
 	values := url.Values{
 		"text":   {"Hello"},
@@ -123,6 +138,8 @@ func TestASCIIArtHandler_InvalidBanner(t *testing.T) {
 	}
 }
 
+// TestASCIIArtHandler_InvalidInput covers characters that are not available in
+// the printable ASCII banner glyph map.
 func TestASCIIArtHandler_InvalidInput(t *testing.T) {
 	values := url.Values{
 		"text":   {"Hello\tWorld"},
@@ -136,6 +153,8 @@ func TestASCIIArtHandler_InvalidInput(t *testing.T) {
 	}
 }
 
+// TestASCIIArtHandler_EscapedNewline confirms that form text containing the
+// literal sequence "\n" is normalized before rendering.
 func TestASCIIArtHandler_EscapedNewline(t *testing.T) {
 	values := url.Values{
 		"text":   {"Hello\\nWorld"},

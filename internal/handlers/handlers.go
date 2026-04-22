@@ -10,9 +10,13 @@ import (
 	"strings"
 )
 
+// loadBanner and renderASCII are package variables so tests can stub the file
+// loading or rendering paths without changing handler behavior.
 var loadBanner = font.LoadBanner
 var renderASCII = render.Render
 
+// indexPageData is passed to the home template for both the empty form and the
+// rendered result state.
 type indexPageData struct {
 	Text      string
 	Banner    string
@@ -20,6 +24,7 @@ type indexPageData struct {
 	HasResult bool
 }
 
+// errorPageData provides the content used by the shared error template.
 type errorPageData struct {
 	Code        int
 	Message     string
@@ -61,6 +66,7 @@ func renderErrorPage(w http.ResponseWriter, code int, message string) {
 
 }
 
+// errorDetails maps an HTTP status to user-facing copy for the error page.
 func errorDetails(code int, message string) (string, string, string) {
 	switch code {
 	case http.StatusBadRequest:
@@ -78,6 +84,7 @@ func errorDetails(code int, message string) (string, string, string) {
 	}
 }
 
+// renderTemplate loads and executes a single HTML template file.
 func renderTemplate(w http.ResponseWriter, file string, data any) error {
 	tmpl, err := template.ParseFiles(file)
 	if err != nil {
@@ -139,6 +146,9 @@ func asciiArt(w http.ResponseWriter, r *http.Request) {
 		renderErrorPage(w, http.StatusInternalServerError, "Internal Server Error")
 	}
 }
+
+// exportHandler re-renders submitted form data and sends the ASCII result as a
+// downloadable plain-text file.
 func exportHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		renderErrorPage(w, http.StatusBadRequest, "Bad Request")
@@ -165,6 +175,8 @@ func exportHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// buildASCII is the shared render path used by the page render and export
+// handlers so validation, banner loading, and output generation stay aligned.
 func buildASCII(text, banner string) (string, int, string) {
 	if banner != "standard" && banner != "shadow" && banner != "thinkertoy" {
 		return "", http.StatusBadRequest, "Bad Request"

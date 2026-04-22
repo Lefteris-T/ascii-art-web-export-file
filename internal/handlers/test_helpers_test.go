@@ -7,6 +7,9 @@ import (
 	"testing"
 )
 
+// TestMain moves handler package tests to the repository root. The handlers use
+// repo-relative template and asset paths, so package tests need the same working
+// directory as `go run .`.
 func TestMain(m *testing.M) {
 	_, thisFile, _, ok := runtime.Caller(0)
 	if !ok {

@@ -6,17 +6,17 @@ import (
 	"net/http"
 )
 
+// main bootstraps the web server, registers application routes, and exposes
+// static assets used by the templates.
 func main() {
-	// main only bootstraps the server and delegates route setup to the
-	// handlers package so HTTP logic stays out of the entrypoint.
-	//link css with go
 	mux := http.NewServeMux()
 	handlers.Register(mux)
+
+	// Serve static files separately from the application handlers.
 	mux.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir("css"))))
 	mux.Handle("/image/", http.StripPrefix("/image/", http.FileServer(http.Dir("image"))))
 
 	log.Println("Server started at http://localhost:8080")
-	// The mux is the router that sends each request to the matching handler.
 	if err := http.ListenAndServe(":8080", mux); err != nil {
 		log.Fatal(err)
 	}

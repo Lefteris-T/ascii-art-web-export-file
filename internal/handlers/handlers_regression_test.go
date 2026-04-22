@@ -10,6 +10,8 @@ import (
 	"testing"
 )
 
+// TestHome_GetStillWorks guards the existing home page while export work is
+// added around it.
 func TestHome_GetStillWorks(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	rr := httptest.NewRecorder()
@@ -26,6 +28,8 @@ func TestHome_GetStillWorks(t *testing.T) {
 	}
 }
 
+// TestAsciiArt_PostStillWorks confirms the original render submission path
+// still returns a result page.
 func TestAsciiArt_PostStillWorks(t *testing.T) {
 	form := url.Values{}
 	form.Set("text", "A")
@@ -47,6 +51,8 @@ func TestAsciiArt_PostStillWorks(t *testing.T) {
 	}
 }
 
+// TestAsciiArt_WrongMethodStillWorks preserves existing invalid method
+// behavior for the render endpoint.
 func TestAsciiArt_WrongMethodStillWorks(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/ascii-art", nil)
 	rr := httptest.NewRecorder()
@@ -58,6 +64,8 @@ func TestAsciiArt_WrongMethodStillWorks(t *testing.T) {
 	}
 }
 
+// TestAsciiArt_InvalidBannerStillWorks ensures invalid banner handling did not
+// change while adding export.
 func TestAsciiArt_InvalidBannerStillWorks(t *testing.T) {
 	form := url.Values{}
 	form.Set("text", "A")
@@ -84,6 +92,8 @@ func TestAsciiArt_MissingAssetStillWorks(t *testing.T) {
 	rr := httptest.NewRecorder()
 
 	originalLoadBanner := loadBanner
+	// Stub banner loading so the handler follows the same path as a missing
+	// asset on disk without renaming real project files.
 	loadBanner = func(path string) (font.Font, error) {
 		return font.Font{}, errors.New("missing asset stub")
 	}
@@ -98,6 +108,8 @@ func TestAsciiArt_MissingAssetStillWorks(t *testing.T) {
 	}
 }
 
+// TestRenderErrorPage_StillWorks checks that unknown routes still render the
+// shared error page after route additions.
 func TestRenderErrorPage_StillWorks(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/does-not-exist", nil)
 	rr := httptest.NewRecorder()

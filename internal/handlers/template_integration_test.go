@@ -7,6 +7,8 @@ import (
 	"testing"
 )
 
+// TestHomePage_NoExportFormWithoutResult ensures users only see export controls
+// after there is rendered content to download.
 func TestHomePage_NoExportFormWithoutResult(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	rr := httptest.NewRecorder()
@@ -24,6 +26,8 @@ func TestHomePage_NoExportFormWithoutResult(t *testing.T) {
 	}
 }
 
+// TestAsciiArtPage_ShowsExportFormWhenResultExists checks that the rendered
+// page includes the form data needed for the export endpoint to re-render.
 func TestAsciiArtPage_ShowsExportFormWhenResultExists(t *testing.T) {
 	form := strings.NewReader("text=hello&banner=standard")
 	req := httptest.NewRequest(http.MethodPost, "/ascii-art", form)

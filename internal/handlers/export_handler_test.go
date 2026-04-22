@@ -8,6 +8,8 @@ import (
 	"testing"
 )
 
+// TestExportHandler_Success verifies the happy path for downloading generated
+// ASCII art as a plain text attachment.
 func TestExportHandler_Success(t *testing.T) {
 	mux := http.NewServeMux()
 	Register(mux)
@@ -26,11 +28,13 @@ func TestExportHandler_Success(t *testing.T) {
 		t.Fatalf("expected status %d, got %d", http.StatusOK, rr.Code)
 	}
 
+	// Successful export must identify the body as text, not HTML.
 	contentType := rr.Header().Get("Content-Type")
 	if !strings.Contains(contentType, "text/plain") {
 		t.Fatalf("expected Content-Type to contain %q, got %q", "text/plain", contentType)
 	}
 
+	// Content-Disposition is what tells the browser to download a .txt file.
 	contentDisposition := rr.Header().Get("Content-Disposition")
 	if contentDisposition == "" {
 		t.Fatal("expected Content-Disposition header to be set")
@@ -53,6 +57,8 @@ func TestExportHandler_Success(t *testing.T) {
 	}
 }
 
+// TestExportHandler_WrongMethod protects the route contract: export accepts
+// POST only and rejects direct GET requests.
 func TestExportHandler_WrongMethod(t *testing.T) {
 	mux := http.NewServeMux()
 	Register(mux)
@@ -67,6 +73,8 @@ func TestExportHandler_WrongMethod(t *testing.T) {
 	}
 }
 
+// TestExportHandler_InvalidBanner ensures export uses the same banner
+// validation rules as normal rendering.
 func TestExportHandler_InvalidBanner(t *testing.T) {
 	mux := http.NewServeMux()
 	Register(mux)
@@ -86,6 +94,8 @@ func TestExportHandler_InvalidBanner(t *testing.T) {
 	}
 }
 
+// TestExportHandler_RenderError checks that invalid render input is surfaced as
+// a bad request instead of producing a downloadable file.
 func TestExportHandler_RenderError(t *testing.T) {
 	mux := http.NewServeMux()
 	Register(mux)
@@ -104,6 +114,9 @@ func TestExportHandler_RenderError(t *testing.T) {
 		t.Fatalf("expected status %d, got %d", http.StatusBadRequest, rr.Code)
 	}
 }
+
+// extractASCIIResult pulls the rendered ASCII block out of the HTML response so
+// the integration test can compare it directly with the exported text body.
 func extractASCIIResult(t *testing.T, html string) string {
 	t.Helper()
 
@@ -123,6 +136,9 @@ func extractASCIIResult(t *testing.T, html string) string {
 
 	return html[start : start+end]
 }
+
+// TestExportMatchesRenderedOutput proves export and page rendering use the same
+// server-side source of truth for ASCII generation.
 func TestExportMatchesRenderedOutput(t *testing.T) {
 	mux := http.NewServeMux()
 	Register(mux)
