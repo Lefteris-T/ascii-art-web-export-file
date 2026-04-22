@@ -2,7 +2,7 @@
 
 ## Description
 
-`ascii-art-web-export-file` is a Go web application that renders text as ASCII art and lets the user export the rendered result as a `.txt` file.
+`ascii-art-web-export-file` is a Go web application that renders text as ASCII art and lets the user export the rendered result as a downloadable file.
 
 The project keeps the existing ASCII art web flow:
 
@@ -10,7 +10,7 @@ The project keeps the existing ASCII art web flow:
 - the user enters text
 - the user selects a banner
 - the app renders the ASCII art in the browser
-- after a result exists, the user can download the same output as a text file
+- after a result exists, the user can download the output as TXT, HTML, or JSON
 
 The export feature re-renders the result on the server from the submitted `text` and `banner` values. It does not trust pre-rendered ASCII from the browser. This keeps the downloaded file aligned with the backend rendering rules.
 
@@ -25,7 +25,7 @@ The server exposes:
 - `POST /ascii-art`
   - renders submitted text as ASCII art and shows the result on the page
 - `POST /export`
-  - exports the rendered ASCII art as a downloadable `.txt` file
+  - exports the rendered ASCII art as a downloadable file
 - `GET /css/*`
   - serves stylesheet files
 - `GET /image/*`
@@ -45,16 +45,35 @@ The export endpoint accepts the same core form values as the render flow:
 
 - `text`
 - `banner`
+- `format`
 
-On success, `POST /export` returns the ASCII art as plain text with download headers:
+Supported export formats:
 
-- `Content-Type: text/plain; charset=utf-8`
+- `txt`
+  - returns the rendered ASCII output exactly as plain text
+  - filename: `ascii-art.txt`
+  - content type: `text/plain; charset=utf-8`
+- `html`
+  - wraps the rendered ASCII output in a small HTML document with a `<pre>` block
+  - escapes the rendered result before placing it in HTML
+  - filename: `ascii-art.html`
+  - content type: `text/html; charset=utf-8`
+- `json`
+  - returns a JSON object containing `text`, `banner`, and `result`
+  - filename: `ascii-art.json`
+  - content type: `application/json`
+
+If `format` is missing, the server defaults to `txt`.
+
+On success, `POST /export` returns the selected export body with download headers:
+
+- `Content-Type: <format media type>`
 - `Content-Length: <exact byte length>`
-- `Content-Disposition: attachment; filename="ascii-art.txt"`
+- `Content-Disposition: attachment; filename="<stable export filename>"`
 
-The exported body is the ASCII output only. It is not wrapped in HTML.
+For TXT export, the exported body is the ASCII output only. It is not wrapped in HTML.
 
-The browser handles the final saved file on the user's machine. The server sends a normal downloadable text response so the saved `.txt` file can be created with the user's usual read/write permissions.
+The browser handles the final saved file on the user's machine. The server sends a normal downloadable response so the saved file can be created with the user's usual read/write permissions.
 
 ## Error Handling
 
@@ -101,7 +120,8 @@ How to use the web app:
 3. Select one of the available banners.
 4. Submit the form.
 5. View the rendered ASCII art on the same page.
-6. Use the export button to download the result as `ascii-art.txt`.
+6. Select an export format.
+7. Use the export button to download the result.
 
 Run the test suite:
 
@@ -131,8 +151,8 @@ GOCACHE=/tmp/go-build go test ./...
 - `internal/render`
   - converts validated text into ASCII art using the selected banner
 - `internal/export`
-  - keeps export content generation minimal and deterministic
-  - returns final ASCII content unchanged
+  - builds TXT, HTML, and JSON export content
+  - returns the export body, media type, filename, and any format error
 - `templates/`
   - contains the home page and error page templates
 - `assets/`
@@ -151,11 +171,10 @@ GOCACHE=/tmp/go-build go test ./...
 5. Parse the banner glyphs with `internal/font`.
 6. Render the text with `internal/render`.
 7. For `/ascii-art`, inject the result into the HTML page inside a `<pre>` block.
-8. For `/export`, return the rendered result as plain text with download headers.
+8. For `/export`, build the selected format and return it with download headers.
 
-The exported content is expected to match the rendered ASCII output byte-for-byte.
+The TXT exported content is expected to match the rendered ASCII output byte-for-byte.
 The server exports the file as an HTTP download. Since the file is saved by the user's browser, final file permissions are handled by the user's operating system. The downloaded file is created under the current user account and is readable/writable by that user according to normal OS defaults.
-
 
 ## Authors
 

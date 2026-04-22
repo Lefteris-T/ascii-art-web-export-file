@@ -1,7 +1,5 @@
 package export
 
-package export
-
 import (
 	"encoding/json"
 	"fmt"
