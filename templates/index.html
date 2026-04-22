@@ -1,59 +1,81 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ASCII Art Generator</title>
-  <link rel="stylesheet" href="/css/style.css">
-  
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASCII Art Generator</title>
+    <link rel="stylesheet" href="/css/style.css">
 </head>
-<body>
-  <body class="home-page">
-  <div class="container">
-    <h1>ASCII Art Generator</h1>
-    <p class="subtitle">Turn plain text into stylish ASCII art with your favorite banner.</p>
+<body class="home-page">
+    <div class="container">
+        <h1>ASCII Art Generator</h1>
+        <p class="subtitle">Turn plain text into stylish ASCII art with your favorite banner.</p>
 
-    <form action="/ascii-art" method="POST">
-      <label for="text">Enter text</label>
-      <textarea id="text" name="text" rows="8" cols="50" placeholder="Type something here...">{{.Text}}</textarea>
+        <form action="/ascii-art" method="POST">
+            <label for="text">Enter text</label>
+            <textarea id="text" name="text" rows="8" cols="50" placeholder="Type something here...">{{.Text}}</textarea>
 
-      <div class="banner-group">
-        <p>Select banner</p>
+            <div class="banner-group">
+                <p>Select banner</p>
 
-        <div class="banner-options">
-          <label for="standard">
-            <input type="radio" id="standard" name="banner" value="standard" {{if eq .Banner "standard"}}checked{{end}}>
-            Standard
-          </label>
+                <div class="banner-options">
+                    <label for="standard">
+                        <input type="radio" id="standard" name="banner" value="standard" {{if eq .Banner "standard"}}checked{{end}}>
+                        Standard
+                    </label>
 
-          <label for="shadow">
-            <input type="radio" id="shadow" name="banner" value="shadow" {{if eq .Banner "shadow"}}checked{{end}}>
-            Shadow
-          </label>
+                    <label for="shadow">
+                        <input type="radio" id="shadow" name="banner" value="shadow" {{if eq .Banner "shadow"}}checked{{end}}>
+                        Shadow
+                    </label>
 
-          <label for="thinkertoy">
-            <input type="radio" id="thinkertoy" name="banner" value="thinkertoy" {{if eq .Banner "thinkertoy"}}checked{{end}}>
-            Thinkertoy
-          </label>
+                    <label for="thinkertoy">
+                        <input type="radio" id="thinkertoy" name="banner" value="thinkertoy" {{if eq .Banner "thinkertoy"}}checked{{end}}>
+                        Thinkertoy
+                    </label>
+                </div>
+            </div>
+
+            <button type="submit">Generate ASCII Art</button>
+        </form>
+
+        {{if .HasResult}}
+        <div class="result-section">
+            <h2>ASCII Art Result</h2>
+
+            <form action="/export" method="POST">
+                <input type="hidden" name="text" value="{{.Text}}">
+                <input type="hidden" name="banner" value="{{.Banner}}">
+
+                <div class="format-group">
+                    <p>Select export format</p>
+
+                    <div class="format-options">
+                        <label for="format-txt">
+                            <input type="radio" id="format-txt" name="format" value="txt" checked>
+                            TXT
+                        </label>
+
+                        <label for="format-html">
+                            <input type="radio" id="format-html" name="format" value="html">
+                            HTML
+                        </label>
+
+                        <label for="format-json">
+                            <input type="radio" id="format-json" name="format" value="json">
+                            JSON
+                        </label>
+                    </div>
+                </div>
+
+                <button type="submit">Export</button>
+            </form>
+
+            <div class="result-box">
+                <pre id="ascii-result">{{.Result}}</pre>
+            </div>
         </div>
-      </div>
-
-      <button type="submit">Generate ASCII Art</button>
-    </form>
-    {{if .HasResult}}
-  <div class="result-section">
-    <h2>ASCII Art Result</h2>
- <form action="/export" method="POST">
-        <input type="hidden" name="text" value="{{.Text}}">
-        <input type="hidden" name="banner" value="{{.Banner}}">
-        <button type="submit">Export as .txt</button>
-    </form>
-
-    <div class="result-box">
-        <pre id="ascii-result">{{.Result}}</pre>
+        {{end}}
     </div>
-</div>
-{{end}}
-  </div>
 </body>
 </html>

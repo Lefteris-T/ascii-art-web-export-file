@@ -1,13 +1,16 @@
 package handlers
 
 import (
-	"ascii-art-web-export-file/internal/font"
-	"ascii-art-web-export-file/internal/render"
+	"encoding/json"
+	"html"
 	"html/template"
 	"net/http"
 	"path/filepath"
 	"strconv"
 	"strings"
+
+	"ascii-art-web-export-file/internal/font"
+	"ascii-art-web-export-file/internal/render"
 )
 
 // loadBanner and renderASCII are package variables so tests can stub the file
@@ -147,8 +150,6 @@ func asciiArt(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// exportHandler re-renders submitted form data and sends the ASCII result as a
-// downloadable plain-text file.
 func exportHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		renderErrorPage(w, http.StatusBadRequest, "Bad Request")
@@ -157,20 +158,65 @@ func exportHandler(w http.ResponseWriter, r *http.Request) {
 
 	text := strings.ReplaceAll(r.FormValue("text"), "\\n", "\n")
 	banner := r.FormValue("banner")
+	format := r.FormValue("format")
 
-	exported, status, message := buildASCII(text, banner)
-	if status != http.StatusOK {
-		renderErrorPage(w, status, message)
+	if format == "" {
+		format = "txt"
+	}
+
+	result, statusCode, message := buildASCII(text, banner)
+	if statusCode != http.StatusOK {
+		renderErrorPage(w, statusCode, message)
 		return
 	}
 
-	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	w.Header().Set("Content-Disposition", `attachment; filename="ascii-art.txt"`)
+	var (
+		exported string
+		filename string
+	)
+
+	switch format {
+	case "txt":
+		exported = result
+		filename = "ascii-art.txt"
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+
+	case "html":
+		exported = "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"UTF-8\">\n<title>ASCII Art Export</title>\n</head>\n<body>\n<pre>" + html.EscapeString(result) + "</pre>\n</body>\n</html>\n"
+		filename = "ascii-art.html"
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+
+	case "json":
+		data := struct {
+			Text   string `json:"text"`
+			Banner string `json:"banner"`
+			Result string `json:"result"`
+		}{
+			Text:   text,
+			Banner: banner,
+			Result: result,
+		}
+
+		jsonBytes, err := json.MarshalIndent(data, "", "  ")
+		if err != nil {
+			renderErrorPage(w, http.StatusInternalServerError, "Internal Server Error")
+			return
+		}
+
+		exported = string(jsonBytes)
+		filename = "ascii-art.json"
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+
+	default:
+		renderErrorPage(w, http.StatusBadRequest, "Bad Request")
+		return
+	}
+
+	w.Header().Set("Content-Disposition", "attachment; filename=\""+filename+"\"")
 	w.Header().Set("Content-Length", strconv.Itoa(len([]byte(exported))))
 	w.WriteHeader(http.StatusOK)
 
-	_, err := w.Write([]byte(exported))
-	if err != nil {
+	if _, err := w.Write([]byte(exported)); err != nil {
 		return
 	}
 }

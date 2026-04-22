@@ -154,9 +154,9 @@ GOCACHE=/tmp/go-build go test ./...
 8. For `/export`, return the rendered result as plain text with download headers.
 
 The exported content is expected to match the rendered ASCII output byte-for-byte.
+The server exports the file as an HTTP download. Since the file is saved by the user's browser, final file permissions are handled by the user's operating system. The downloaded file is created under the current user account and is readable/writable by that user according to normal OS defaults.
+
 
 ## Authors
 
 - Lefteris Tzokas (Ltzokas)
-- Emmanouil Damaskinakis (Edamaski)
-- Alexandros Rigopoulos (arigopou)
