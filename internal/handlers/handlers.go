@@ -132,7 +132,7 @@ func asciiArt(w http.ResponseWriter, r *http.Request) {
 		HasResult: true,
 	}
 
-	if err := renderTemplate(w, "templates/index.html", data); err != nil {
+	if err := renderTemplate(w, "../../templates/index.html", data); err != nil {
 		renderErrorPage(w, http.StatusInternalServerError, "Internal Server Error")
 	}
 }
